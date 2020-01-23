@@ -92,20 +92,35 @@ function showLocations(ids, lats, lons, contents, latLng) {
 
   zoomLevel = map.getZoom();
   
-  if (zoomLevel >= 9) {
-    if (contents.length == 0 && latLng.length === 1) {
-      document.getElementById("map_canvas").innerHTML="<p id='not_found' class='dark hello'>" + "NOT FOUND. PLEASE SEARCH AGAIN." + "<br />" + "Use the dropdown or the autocompleting textbox if you want results." + "</p>";
-    } else if (contents.length == 0 && latLng.length === 2) {
-      map.setZoom(16);
-      map.fitBounds(bounds, {padding: 50, animate: false});
-      if (document.getElementById("not_found")) {
-        document.getElementById("not_found").style.display = "none";
+  function manyResults() {
+    if (zoomLevel >= 9) {
+      if (contents.length == 0 && latLng.length === 1) {
+        document.getElementById("map_canvas").innerHTML="<p id='not_found' class='dark hello'>" + "NOT FOUND. PLEASE SEARCH AGAIN." + "<br />" + "Use the dropdown or the autocompleting textbox if you want results." + "</p>";
+      } else if (contents.length == 0 && latLng.length === 2) {
+        map.setZoom(16);
+        map.fitBounds(bounds, {padding: 50, animate: false});
+        if (document.getElementById("not_found")) {
+          document.getElementById("not_found").style.display = "none";
+        }
+      } else {
+        map.fitBounds(bounds, {padding: 50, animate: false});  //guh
+        if (document.getElementById("not_found")) {
+          document.getElementById("not_found").style.display = "none";
+        }
       }
-    } else {
-      map.fitBounds(bounds, {padding: 50, animate: false});  //guh
-      if (document.getElementById("not_found")) {
-        document.getElementById("not_found").style.display = "none";
-      }
+    }
+  }
+  
+  function oneResult() {
+    map.setZoom(16);
+    map.setCenter([lons[0], lats[0]]);
+    mapAdjusted = 0;
+    document.getElementById('followCheck').removeAttribute('checked');
+    console.log("mapAdjusted should be 0: " + mapAdjusted);
+    tooZoomed();
+    if (document.getElementById("not_found")) {
+      document.getElementById("not_found").style.display = "none";
+      tooZoomed();
     }
   }
 
@@ -116,7 +131,9 @@ function showLocations(ids, lats, lons, contents, latLng) {
       tooZoomed();
     }
     else {
+      manyResults();
       tooZoomed();
+      redo();
     }
   } else if (zoomLevel < 9) {
     resultsFound();
@@ -128,25 +145,12 @@ function showLocations(ids, lats, lons, contents, latLng) {
       console.log("mapAdjusted 0? " + mapAdjusted);
     }
     else {
+      manyResults();
       tooZoomed();
       console.log("mapAdjusted 0? " + mapAdjusted);
     } 
   }         
   tooZoomed();
-  redo();
-}
-
-function oneResult() {
-  map.setZoom(16);
-  map.setCenter([lons[0], lats[0]]);
-  mapAdjusted = 0;
-  document.getElementById('followCheck').removeAttribute('checked');
-  console.log("mapAdjusted should be 0: " + mapAdjusted);
-  tooZoomed();
-  if (document.getElementById("not_found")) {
-    document.getElementById("not_found").style.display = "none";
-    tooZoomed();
-  }
 }
 
 function unChecked() {
