@@ -2,7 +2,7 @@ require 'pony'
 
 class PagesController < ApplicationController
   respond_to :xml, :json, :html, :js, :rss
-  has_scope :by_location_name, :by_location_id, :by_machine_name, :by_machine_id, :user_faved
+  has_scope :by_location_name, :by_location_id, :by_machine_name, :by_machine_id, :user_faved, :address
 
   def params
     request.parameters

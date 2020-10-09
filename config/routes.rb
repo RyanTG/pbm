@@ -144,6 +144,13 @@ Rails.application.routes.draw do
       get :autocomplete
     end
   end
+  
+  resources :regions, only: [:index, :show] do
+    collection do
+      get :autocomplete
+    end
+  end
+
 
   resources :location_machine_xrefs do
     collection do

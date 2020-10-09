@@ -9,6 +9,12 @@ class RegionsController < InheritedResources::Base
       render action: 'new'
     end
   end
+  
+  def autocomplete
+    @searchable_regions = Region.all
+    
+    render json: @searchable_regions.select { |r| r.full_name =~ /#{Regexp.escape params[:term] || ''}/i }.sort_by(&:full_name).map { |r| { label: "#{r.full_name}", value: r.full_name, id: r.id } }
+  end
 
   def index
     respond_with(@regions = Region.all, methods: %i[subdir emailContact])

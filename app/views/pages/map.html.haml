@@ -115,7 +115,7 @@
       $('#by_location_name').val('');
       $('#by_machine_id').val('');
     });
-
+    
     $('#address').bind('input', function(event, ui) {
       event.preventDefault();
       $('#by_location_id').val('');
@@ -138,5 +138,16 @@
       $('#by_location_name').val('');
       $('#by_machine_id').val(ui.item.id);
       $('#by_machine_name').val(ui.item.value);
+    });
+    
+    $('#address').autocomplete({source: '/regions/autocomplete'});
+    $('#address').bind('autocompleteselect', function(event, ui) {
+      event.preventDefault();
+      $('#by_location_id').val('');
+      $('#by_location_name').val('');
+      $('#by_machine_id').val('');
+      $('#by_machine_name').val('');
+      $('#address').val(ui.item.id);
+      $('#address').val(ui.item.value);
     });
   });
