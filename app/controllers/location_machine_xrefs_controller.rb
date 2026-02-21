@@ -121,6 +121,11 @@ class LocationMachineXrefsController < ApplicationController
       @lmxs = @lmxs.where("machine_id = ?", params[:machine_id]) if params[:machine_id].present? && params[:machine_id].match?(/[0-9]+/)
     end
     @title = ' - ' + Machine.where(id: params[:machine_id]).first.name
+    if params[:machine_id].present?
+      @title = ' - ' + Machine.where(id: params[:machine_id]).first.name
+    else
+      @title = ''
+    end
   end
 
   def ic_toggle
