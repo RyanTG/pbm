@@ -121,9 +121,9 @@ class LocationMachineXrefsController < ApplicationController
       @lmxs = @lmxs.where("machine_id = ?", params[:machine_id]) if params[:machine_id].present? && params[:machine_id].match?(/[0-9]+/)
     end
     if params[:machine_id].present?
-      @title = ' - ' + Machine.where(id: params[:machine_id]).first.name
+      @machine_name = " - #{Machine.where(id: params[:machine_id]).first&.name}"
     else
-      @title = ''
+      @machine_name = ''
     end
   end
 
