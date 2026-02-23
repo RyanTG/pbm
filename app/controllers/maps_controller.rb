@@ -309,11 +309,7 @@ class MapsController < ApplicationController
       @title_params[:title_meta] = "#{loc.name} on Pinball Map! " + loc.full_street_address + machine_length.to_s + machine_list.to_s
     end
 
-    if @region
-      @region_fullname = "the " + @region.full_name
-    else
-      @region_fullname = ""
-    end
+    @region_fullname = @region.present? ? "the #{@region.full_name}" : ""
 
     cities = {}
     location_types = {}

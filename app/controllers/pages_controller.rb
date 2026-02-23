@@ -186,13 +186,8 @@ limit 25")
       @pagy, @recent_activity = pagy(UserSubmission.where(submission_type: submission_type, deleted_at: nil).where.not(submission: nil).order("created_at DESC").includes([ :user, :location ]))
     end
 
-    if @region
-      @region_fullname = "the " + @region.full_name
-      @region_name = @region.name
-    else
-      @region_fullname = ""
-      @region_name = "map"
-    end
+    @region_fullname = @region.present? ? "the #{@region.full_name}" : ""
+    @region_name = @region.present? ? @region.name : "map"
     respond_to do |format|
       format.html
     end

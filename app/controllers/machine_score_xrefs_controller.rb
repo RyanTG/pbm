@@ -29,6 +29,8 @@ class MachineScoreXrefsController < ApplicationController
     else
       @msxs = UserSubmission.where(submission_type: "new_msx", created_at: "2019-05-03T07:00:00.00-07:00"..Date.today.end_of_day, deleted_at: nil).limit(50).order("created_at DESC")
     end
+    @msxs = UserSubmission.where(submission_type: "new_msx", created_at: "2019-05-03T07:00:00.00-07:00"..Date.today.end_of_day, deleted_at: nil).limit(50).order("created_at DESC")
+    @msxs = @msxs.where(region_id: @region.id) if @region.present?
   end
 
   def destroy
