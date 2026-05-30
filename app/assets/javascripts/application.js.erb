@@ -25,6 +25,7 @@ var stored_machine_id = "";
 var boundsData;
 var currentSort = 'name';
 var lastSearchFn = null;
+var in_bounds_search = false;
 var selectedLocationID;
 var notFound_lon;
 var notFound_lat;
@@ -61,7 +62,7 @@ function toggle_machine_data(name, id) {
 }
 
 function regionMapLocations(region_id) {
-  mapAdjusted === 0;
+  mapAdjusted = 0;
   var region_id = region_id;
 
   lastSearchFn = function() {
@@ -90,7 +91,7 @@ function findClosestLocations() {
 }
 
 function homeMapBounds() {
-  mapAdjusted === 0;
+  mapAdjusted = 0;
   locations_geojson = [];
   showLocations();
   map_init = 0;
@@ -98,6 +99,7 @@ function homeMapBounds() {
 }
 
 function getMapBounds(by_at_least_n_machines, by_type_id, by_machine_id, by_machine_single_id) {
+  var extraFilters = window.activeMapFilters || {};
   mapAdjusted = 1;
   refresh_bounds = map.getBounds();
   var capturedBoundsData = {
@@ -111,11 +113,15 @@ function getMapBounds(by_at_least_n_machines, by_type_id, by_machine_id, by_mach
     $.ajax({
       url: "/get_bounds",
       type: "POST",
-      data: { boundsData: capturedBoundsData, by_at_least_n_machines: by_at_least_n_machines, by_type_id: by_type_id, by_machine_id: by_machine_id, by_machine_single_id: by_machine_single_id, sort: currentSort },
+      data: { boundsData: capturedBoundsData, by_at_least_n_machines: by_at_least_n_machines, by_type_id: by_type_id, by_machine_id: by_machine_id, by_machine_single_id: by_machine_single_id, by_ic_active: extraFilters.by_ic_active || '', manufacturer: extraFilters.manufacturer || [], by_machine_type: extraFilters.by_machine_type || [], sort: currentSort },
       success: function(data) {
-        $('#locations').html(data);
-        refresh_bounds = undefined;
         mapAdjusted = 0;
+        in_bounds_search = true;
+        $('#locations').html(data);
+        in_bounds_search = false;
+        refresh_bounds = undefined;
+        hideRefresh();
+        refreshButton();
         map.getSource("point").setData({
           'type': 'FeatureCollection',
           'features': locations_geojson
@@ -306,7 +312,7 @@ function showLocations() {
     document.getElementById("results_container").innerHTML = "<p id='not_found' class='red bold'>" + "NOT FOUND. PLEASE SEARCH AGAIN." + "<br />" + "Use the dropdown or the autocompleting textbox if you want results." + "</p>";
     map.setCenter([center_lon, center_lat]);
     hideRefresh();
-  } else if (locations_geojson.length > 1) {
+  } else if (locations_geojson.length > 1 && !in_bounds_search) {
     locations_geojson.forEach(function(feature) {
       bounds.extend(feature.geometry.coordinates);
     });
@@ -381,7 +387,10 @@ function hideRefresh() {
   document.getElementById("refresh_button").style.display = "none";
 }
 
+var refresh_button_setup = false;
 function refreshButton() {
+  if (refresh_button_setup) return;
+  refresh_button_setup = true;
   map.on('zoomend', function () {
     document.getElementById("refresh_button").style.display = "block";
     mapAdjusted = 1;

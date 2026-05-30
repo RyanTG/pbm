@@ -24,6 +24,11 @@ class MapsController < ApplicationController
 
     @machine_sample = Machine.select("name, random() as r").order("r").limit(1).first
     @machine_placeholder = @machine_sample.nil? ? "e.g. Lord of the Rings" : "e.g. " + @machine_sample.name
+    @all_machines_json = Machine.order(:name).select(:id, :name, :year, :manufacturer, :machine_group_id).map { |m|
+      { value: m.id.to_s, text: m.name_and_year, manufacturer: m.manufacturer.to_s, group_id: m.machine_group_id }
+    }
+    @all_manufacturers = Machine.distinct.pluck(:manufacturer).compact.reject(&:empty?).sort
+    @selected_machine_ids = (Array(params[:by_machine_single_id]) + Array(params[:by_machine_id])).map(&:to_s)
 
     @big_cities_sample = Location.select(%i[city state], "random() as r").having("count(city)>9").where.not(state: [ nil, "" ]).group("city", "state").order("r").limit(1).first
     @big_cities_placeholder = @big_cities_sample.nil? ? "e.g. Portland, OR" : "e.g. " + @big_cities_sample.city + ", " + @big_cities_sample.state
