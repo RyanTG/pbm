@@ -12,6 +12,8 @@ module Api
       has_scope :by_location_name, :by_machine_name, :by_city_id, :by_city_no_state, :by_at_least_n_machines, :by_at_least_n_machines_city, :by_at_least_n_machines_zone, :by_at_least_n_machines_type, :region, :by_is_stern_army, :regionless_only, :by_ic_active, :by_machine_year_gte, :by_machine_year_lte, :by_payment_type
       has_scope :by_type_id, :by_location_id, :by_machine_id, :by_zone_id, :by_operator_id, :by_machine_single_id, :by_machine_group_id, :by_ipdb_id, :by_opdb_id, :manufacturer, :by_machine_type, :by_machine_display, :by_machine_id_ic, :by_machine_single_id_ic, :by_machine_year, :by_country, :by_state_name, :by_state_id, :by_all_ages, type: :array
       rate_limit to: 30, within: 10.minutes, by: :api_token_rate_limit_key, only: [ :suggest, :update ], name: "api_locations_suggest_update"
+      # All app installs share one api token, so throttle geocoding per IP to protect the HERE quota.
+      rate_limit to: 20, within: 1.minute, by: -> { request.remote_ip }, only: :geocode_lat_lon, name: "api_locations_geocode"
 
       MAX_MILES_TO_SEARCH_FOR_CLOSEST_LOCATION = 50
       MAX_BBOX_DIAGONAL_MILES_FOR_UNLIMITED_RESULTS = 500
@@ -654,22 +656,29 @@ module Api
       end
 
       api :GET, "/api/v1/locations/geocode_lat_lon", "Geocode address to lat/lon"
-      description "Geocode address to lat/lon"
+      description "Geocode address to lat/lon. Requires an api_token (param or X-Api-Token header)."
       param :address, String, desc: "Address", required: true
-      param :geocode_key, String, desc: "Private key", required: true
+      param :api_token, String, desc: "API token (or send the X-Api-Token header)", required: false
       formats [ "json" ]
       def geocode_lat_lon
-        lat_lon = ""
-        return return_response("missing or wrong key", "errors") if params[:geocode_key].blank? || (params[:geocode_key] != ENV["GEOCODE_KEY"])
+        return return_response("missing or wrong key", "errors") unless resolve_api_token || valid_legacy_geocode_key?
 
-        if params[:address].present? && params[:geocode_key] == ENV["GEOCODE_KEY"]
+        lat_lon = ""
+        if params[:address].present?
           results = Geocoder.search(params[:address], lookup: :here)
           results = Geocoder.search(params[:address]) if results.blank?
-          if results.present?
-            lat_lon = results.first.coordinates
-          end
+          lat_lon = results.first.coordinates if results.present?
         end
         return_response(lat_lon, "geocode_lat_lon")
+      end
+
+      private
+
+      # TODO: remove (and unset GEOCODE_KEY) once app builds that bundle the key and send no api token have aged out
+      def valid_legacy_geocode_key?
+        expected = ENV["GEOCODE_KEY"].to_s
+        key = params[:geocode_key].to_s
+        expected.present? && key.present? && ActiveSupport::SecurityUtils.secure_compare(key, expected)
       end
     end
   end

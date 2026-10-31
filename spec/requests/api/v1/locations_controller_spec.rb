@@ -1605,10 +1605,50 @@ describe Api::V1::LocationsController, type: :request do
   end
 
   describe '#geocode_lat_lon' do
+    before(:each) do
+      user = FactoryBot.create(:user)
+      @api_token = FactoryBot.create(:api_token, user: user)
+      @api_token.approve!(approved_by: user)
+      allow(ENV).to receive(:[]).and_call_original
+      allow(ENV).to receive(:[]).with('GEOCODE_KEY').and_return('rightkey')
+      # lookup: :here bypasses Geocoder's test stubs, so stub search directly to avoid the network
+      allow(Geocoder).to receive(:search).with('97202', lookup: :here).and_return([ double(coordinates: [ 45.51258500000001, -122.617788 ]) ])
+    end
+
     it 'errors if geocode_key not present or correct' do
-      get '/api/v1/locations/geocode_lat_lon.json?address=Calabasas;geocode_key=wrongkey'
+      get '/api/v1/locations/geocode_lat_lon.json?address=97202;geocode_key=wrongkey'
 
       expect(response.body).to include('errors')
+    end
+
+    it 'errors with no key or token, even with an AppVersion header' do
+      get '/api/v1/locations/geocode_lat_lon.json?address=97202', headers: { 'AppVersion' => '5.4.28' }
+
+      expect(response.body).to include('errors')
+    end
+
+    it 'errors with an invalid api token' do
+      get '/api/v1/locations/geocode_lat_lon.json?address=97202', headers: { 'X-Api-Token' => 'nope' }
+
+      expect(response.body).to include('errors')
+    end
+
+    it 'geocodes with a valid api token header, ignoring a bad geocode_key' do
+      get '/api/v1/locations/geocode_lat_lon.json?address=97202;geocode_key=undefined', headers: { 'X-Api-Token' => @api_token.token }
+
+      expect(JSON.parse(response.body)['geocode_lat_lon']).to eq([ 45.51258500000001, -122.617788 ])
+    end
+
+    it 'geocodes with a valid api_token param' do
+      get '/api/v1/locations/geocode_lat_lon.json', params: { address: '97202', api_token: @api_token.token }
+
+      expect(JSON.parse(response.body)['geocode_lat_lon']).to eq([ 45.51258500000001, -122.617788 ])
+    end
+
+    it 'still geocodes with the legacy geocode_key' do
+      get '/api/v1/locations/geocode_lat_lon.json?address=97202;geocode_key=rightkey'
+
+      expect(JSON.parse(response.body)['geocode_lat_lon']).to eq([ 45.51258500000001, -122.617788 ])
     end
   end
 
